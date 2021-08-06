@@ -1,0 +1,83 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+$vm_gui ||= false
+$vm_memory ||= 2048
+$vm_cpus ||= 2
+$box ||= "ubuntu/focal64"
+
+Vagrant.configure("2") do |config|
+
+  config.vm.box = $box
+
+  config.vm.synced_folder ".", "/vagrant", disabled: true
+
+  # plugin conflict
+  if Vagrant.has_plugin?("vagrant-vbguest") then
+    config.vbguest.auto_update = false
+  end
+
+  # always use Vagrants insecure key
+  config.ssh.insert_key = false
+
+  config.vm.provision "shell", path: "bootstrap.sh"
+
+  config.vm.define "kspray" do |kspray|
+  
+    kspray.vm.hostname = "kspray"
+
+    kspray.vm.network "private_network", ip:"192.168.56.9"
+
+    kspray.vm.provider "virtualbox" do |v|
+      v.name    = "kspray"
+      v.cpus    = $vm_cpus / 2
+      v.memory  = $vm_memory / 2
+      v.gui     = $vm_gui
+    end
+
+    kspray.vm.provision "shell", path: "bootstrap_kspray.sh"
+  end
+
+  # Kubernetes Master Server
+  config.vm.define "kmaster" do |node|
+  
+    node.vm.hostname = "kmaster"
+
+    node.vm.network "private_network", ip: "192.168.56.10"
+  
+    node.vm.provider :virtualbox do |v|
+      v.name    = "kmaster"
+      v.cpus    = $vm_cpus
+      v.memory  = $vm_memory
+      v.gui     = $vm_gui
+    end
+  
+    node.vm.provision "shell", path: "bootstrap_kmaster.sh"
+  
+  end
+
+
+  # Kubernetes Worker Nodes
+  NodeCount = 2
+
+  (1..NodeCount).each do |i|
+
+    config.vm.define "kworker#{i}" do |node|
+
+      node.vm.hostname = "kworker#{i}"
+
+      node.vm.network "private_network", ip: "192.168.56.1#{i}"
+
+      node.vm.provider :virtualbox do |v|
+        v.name    = "kworker#{i}"
+        v.cpus    = $vm_cpus / 2
+        v.memory  = $vm_memory
+        v.gui     = $vm_gui
+      end
+
+      node.vm.provision "shell", path: "bootstrap_kworker.sh"
+
+    end
+
+  end
+end

@@ -1,0 +1,84 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo-deploy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: demo-pod
+  template:
+    metadata:
+      labels:
+        app: demo-pod
+    spec:
+      containers:
+        - name: demo-pod
+          image: adongy/hostname-docker
+          resources:
+            limits:
+              memory: "128Mi"
+              cpu: "100m" # 1000m = 1 CPU
+          ports:
+            - containerPort: 3000 # The port container expose
+
+---
+
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: demo-scale
+spec:
+  # Match the name of the Deployment
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: demo-deploy
+  minReplicas: 5
+  maxReplicas: 10
+  # Horizontal on target tracking
+  targetCPUUtilizationPercentage: 50
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: demo-svc
+spec:
+  type: LoadBalancer
+  selector:
+    app: demo-pod
+  ports:
+  - port: 80
+    targetPort: 3000
+
+---
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: demo-ingress
+  # annotations:
+  #   kubernetes.io/ingress.class: "nginx"
+  #   nginx.ingress.kubernetes.io/affinity: cookie
+  #   nginx.ingress.kubernetes.io/affinity-mode: persistent
+  #   nginx.ingress.kubernetes.io/session-cookie-hash: sha1
+  #   nginx.ingress.kubernetes.io/session-cookie-name: demo-sticky
+  #   nginx.ingress.kubernetes.io/session-cookie-expires: "259200"
+  #   nginx.ingress.kubernetes.io/session-cookie-max-age: "259200"
+  #   nginx.ingress.kubernetes.io/proxy-connect-timeout: "600"
+  labels:
+    name: demo-ingress
+spec:
+  rules:
+  - host: local.demo.vworkspace.cloud
+    http:
+      paths:
+      - pathType: Prefix
+        path: "/"
+        backend:
+          service:
+            name: demo-svc
+            port: 
+              number: 80

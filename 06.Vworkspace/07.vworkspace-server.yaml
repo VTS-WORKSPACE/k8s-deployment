@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vworkspace-server-deploy
+  labels:
+    app: vworkspace
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      pod-label: vworkspace-server-pod
+  template:
+    metadata:
+      labels:
+        pod-label: vworkspace-server-pod
+    spec:
+      containers:
+      - name: vworkspace
+        image: nextcloud:stable
+        env:
+          - name: MYSQL_HOST
+            value: vworkspace-db-svc
+          - name: REDIS_HOST
+            value: vworkspace-redis-svc
+          - name: REDIS_HOST_PORT
+            value: '6379'
+        envFrom:
+          - secretRef:
+              name: vworkspace-db-secret
+        volumeMounts:
+          - name: server-storage
+            mountPath: /var/www/html
+            subPath: server-data
+        resources:
+          requests:
+            memory: "1024Mi"
+            cpu: "1000m"
+          limits:
+            memory: "2048Mi"
+            cpu: "1200m" # 1000m = 1 CPU
+        ports:
+          - containerPort: 80
+      volumes:
+        - name: server-storage
+          persistentVolumeClaim:
+            claimName: vworkspace-shared-storage-claim
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vworkspace-server-svc
+  labels:
+    app: vworkspace
+spec:
+  type: LoadBalancer
+  selector:
+    pod-label: vworkspace-server-pod
+  ports:
+  - protocol: TCP
+    port: 80

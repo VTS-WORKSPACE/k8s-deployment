@@ -1,0 +1,14 @@
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: demo-scale
+spec:
+  # Match the name of the ReplicaSet
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: ReplicaSet
+    name: demo-rs
+  minReplicas: 5
+  maxReplicas: 10
+  # Horizontal on target tracking
+  targetCPUUtilizationPercentage: 50

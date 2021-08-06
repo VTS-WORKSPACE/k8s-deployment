@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vworkspace-redis-deploy
+  labels:
+    app: vworkspace
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      pod-label: vworkspace-redis-pod
+  template:
+    metadata:
+      labels:
+        pod-label: vworkspace-redis-pod
+    spec:
+      containers:
+        - name: redis
+          image: redis
+          resources:
+            limits:
+              memory: "248Mi"
+              cpu: "100m" # 1000m = 1 CPU
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vworkspace-redis-svc
+  labels:
+    app: vworkspace
+spec:
+  selector:
+    pod-label: vworkspace-redis-pod
+  ports:
+  - protocol: TCP
+    port: 6379

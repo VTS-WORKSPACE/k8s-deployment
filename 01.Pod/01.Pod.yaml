@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: demo-pod
+  labels:
+    name: demo-pod
+spec:
+  containers:
+  - name: demo-pod
+    image: adongy/hostname-docker
+    resources:
+      limits:
+        memory: "128Mi"
+        cpu: "100m" # 1000m = 1 CPU
+    ports:
+      - containerPort: 3000 # The port container expose
+      

@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: demo-rs
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: demo-pod
+  template:
+    metadata:
+      name: demo-pod
+      labels:
+        app: demo-pod
+    spec:
+      containers:
+        - name: demo-pod
+          image: adongy/hostname-docker
+          resources:
+            limits:
+              memory: "128Mi"
+              cpu: "100m" # 1000m = 1 CPU
+          ports:
+            - containerPort: 3000 # The port container expose

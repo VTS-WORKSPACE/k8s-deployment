@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vworkspace-db-deploy
+  labels:
+    app: vworkspace
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      pod-label: vworkspace-db-pod
+  template:
+    metadata:
+      labels:
+        pod-label: vworkspace-db-pod
+    spec:
+      containers:
+        - name: mysql
+          image: mariadb:10.5
+          envFrom:
+            - secretRef:
+                name: vworkspace-db-secret
+          volumeMounts:
+            - name: db-storage
+              mountPath: /var/lib/mysql
+              subPath: mysql-data
+          resources:
+            limits:
+              memory: "512Mi"
+              cpu: "1000m" # 1000m = 1 CPU
+      volumes:
+        - name: db-storage
+          persistentVolumeClaim:
+            claimName: vworkspace-shared-storage-claim
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vworkspace-db-svc
+  labels:
+    app: vworkspace
+spec:
+  selector:
+    pod-label: vworkspace-db-pod
+  ports:
+  - protocol: TCP
+    port: 3306
